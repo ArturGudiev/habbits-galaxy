@@ -1,6 +1,6 @@
 # docker compose up  /  docker compose down
 #
-# Cloud: set POSTGRES_PASSWORD in .env.
+# Cloud: set POSTGRES_PASSWORD, AUTH_USER, AUTH_PASS in .env.
 # Ports 5432 and 8080 are not exposed; only frontend is published.
 # API goes through Nginx proxy /api -> backend.
 
@@ -48,13 +48,16 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: habbitgalaxy-frontend
+    environment:
+      AUTH_USER: "${AUTH_USER:-admin}"
+      AUTH_PASS: "${AUTH_PASS:-admin}"
     depends_on:
       - backend
     networks:
       - habbitgalaxy_net
     restart: unless-stopped
     ports:
-      - "${FRONTEND_PORT:-8088}:80"
+      - "${FRONTEND_PORT:-8089}:80"
 
 volumes:
   postgres_data:
