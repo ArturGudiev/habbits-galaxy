@@ -1,0 +1,64 @@
+# docker compose up  /  docker compose down
+#
+# Cloud: set POSTGRES_PASSWORD in .env.
+# Ports 5432 and 8080 are not exposed; only frontend is published.
+# API goes through Nginx proxy /api -> backend.
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: habbitgalaxy-postgres
+    environment:
+      POSTGRES_USER: "${POSTGRES_USER:-postgres}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-postgres}"
+      POSTGRES_DB: "${POSTGRES_DB:-habbits_galaxy}"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - habbitgalaxy_net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-habbits_galaxy}"]
+      interval: 2s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend/HabbitGalaxy.Api
+      dockerfile: Dockerfile
+    container_name: habbitgalaxy-backend
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      POSTGRES_DB: "${POSTGRES_DB:-habbits_galaxy}"
+      POSTGRES_USER: "${POSTGRES_USER:-postgres}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-postgres}"
+      ASPNETCORE_ENVIRONMENT: Production
+      ENABLE_SWAGGER: "true"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - habbitgalaxy_net
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: habbitgalaxy-frontend
+    depends_on:
+      - backend
+    networks:
+      - habbitgalaxy_net
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-8088}:80"
+
+volumes:
+  postgres_data:
+
+networks:
+  habbitgalaxy_net:
+    driver: bridge

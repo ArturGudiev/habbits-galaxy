@@ -1,0 +1,13 @@
+# Local dev: Compose merges this automatically. Exposes backend (and optional postgres)
+# so you can hit http://localhost:8082 directly without going through Nginx.
+# On cloud VM: delete or rename this file so ports stay closed.
+
+services:
+  backend:
+    ports:
+      - "8082:8080"
+
+  # Optional: expose postgres for local tools (pgAdmin, DBeaver).
+  # postgres:
+  #   ports:
+  #     - "5432:5432"
